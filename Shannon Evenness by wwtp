@@ -1,0 +1,44 @@
+# ============================= 
+# Publication-Quality Boxplot of Shannon Evenness by WWTP (with border and ticks)
+# =============================
+
+library(tidyverse)
+
+# --- Step 1: Load Shannon-Richness-Evenness data ---
+file_path <- "C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_richness_evenness_per_sample 1.csv"
+shannon_df <- read.csv(file_path, check.names = FALSE)
+
+# --- Step 2: Clean WWTP column ---
+shannon_df$wwtp <- str_trim(shannon_df$wwtp)
+
+# --- Step 3: Convert WWTP to factor (set order if desired) ---
+# You can manually order them if you want, for example:
+# wwtp_levels <- c("San Jose, CA", "Sunnyvale, CA", "Palo Alto, CA")
+# shannon_df$wwtp <- factor(shannon_df$wwtp, levels = wwtp_levels)
+# If you prefer automatic order:
+shannon_df$wwtp <- factor(shannon_df$wwtp)
+
+# --- Step 4: Define publication-quality colors ---
+pub_colors <- c("yellow", "blue", "red", "green", "purple", "orange", "cyan")[1:length(unique(shannon_df$wwtp))]
+
+# --- Step 5: Create boxplot (Shannon Evenness by WWTP) ---
+ggplot(shannon_df, aes(x = wwtp, y = Shannon_Evenness, fill = wwtp)) +
+  geom_boxplot(outlier.shape = 21, color = "black", alpha = 0.8, width = 0.7) +
+  geom_jitter(width = 0.15, size = 2, alpha = 0.6) +
+  scale_fill_manual(values = pub_colors) +
+  labs(
+    x = "Wastewater Treatment Plant (WWTP)",
+    y = "Shannon Evenness (H / ln(S))"
+  ) +
+  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  theme(
+    legend.position = "none",
+    plot.title = element_blank(),
+    axis.title = element_text(face = "bold", size = 14),
+    axis.text.x = element_text(size = 11, angle = 30, hjust = 1),
+    axis.text.y = element_text(size = 12),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, size = 1.2),
+    axis.ticks = element_line(color = "black")
+  )
