@@ -1,0 +1,44 @@
+# ============================= 
+# Publication-Quality Boxplot of Shannon Diversity (H) by Season (with border and ticks)
+# =============================
+
+library(tidyverse)
+
+# --- Step 1: Load Shannon-Richness-Evenness data ---
+file_path <- "C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_richness_evenness_per_sample 1.csv"
+shannon_df <- read.csv(file_path, check.names = FALSE)
+
+# --- Step 2: Clean season column ---
+shannon_df$season <- str_trim(shannon_df$season)
+
+# --- Step 3: Convert season to factor (set order if desired) ---
+# Example manual order (edit to match your dataset):
+# season_levels <- c("Winter", "Spring", "Summer", "Fall")
+# shannon_df$season <- factor(shannon_df$season, levels = season_levels)
+# If you prefer automatic order:
+shannon_df$season <- factor(shannon_df$season)
+
+# --- Step 4: Define publication-quality colors ---
+pub_colors <- c("skyblue", "springgreen3", "gold", "tomato")[1:length(unique(shannon_df$season))]
+
+# --- Step 5: Create boxplot (Shannon_H by Season) ---
+ggplot(shannon_df, aes(x = season, y = Shannon_H, fill = season)) +
+  geom_boxplot(outlier.shape = 21, color = "black", alpha = 0.8, width = 0.7) +
+  geom_jitter(width = 0.15, size = 2, alpha = 0.6) +
+  scale_fill_manual(values = pub_colors) +
+  labs(
+    x = "Season",
+    y = "Shannon Diversity (H)"
+  ) +
+  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  theme(
+    legend.position = "none",
+    plot.title = element_blank(),
+    axis.title = element_text(face = "bold", size = 14),
+    axis.text.x = element_text(size = 11, angle = 30, hjust = 1),
+    axis.text.y = element_text(size = 12),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, size = 1.2),
+    axis.ticks = element_line(color = "black")
+  )
