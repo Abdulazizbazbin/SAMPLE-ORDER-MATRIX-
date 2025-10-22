@@ -1,0 +1,44 @@
+# ============================================
+# Publication-Quality Boxplot of Shannon Diversity (H) by Pore Size
+# ============================================
+
+# --- Load Required Libraries ---
+library(tidyverse)
+
+# --- Step 1: Load the data ---
+file_path <- "C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_richness_evenness_per_sample 1.csv"
+shannonH_df <- read.csv(file_path, check.names = FALSE)
+
+# --- Step 2: Clean pore_size column ---
+shannonH_df$pore_size <- str_trim(shannonH_df$pore_size)
+
+# --- Step 3: Set pore size order (smallest to largest) ---
+pore_levels <- c("0.45 filtrate", "0.45", "3", "20", "100")
+shannonH_df$pore_size <- factor(shannonH_df$pore_size, levels = pore_levels)
+
+# --- Step 4: Define publication-quality color palette ---
+pub_colors <- c("yellow", "blue", "red", "green", "purple")
+
+# --- Step 5: Create publication-quality boxplot (Shannon_H by pore size) ---
+ggplot(shannonH_df, aes(x = pore_size, y = Shannon_H, fill = pore_size)) +
+  geom_boxplot(outlier.shape = 21, color = "black", alpha = 0.85, width = 0.7) +
+  geom_jitter(width = 0.15, size = 2, alpha = 0.6) +
+  scale_fill_manual(values = pub_colors) +
+  labs(
+    x = "Pore Size (μm)",
+    y = "Shannon Diversity (H)"
+  ) +
+  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  theme(
+    legend.position = "none",
+    plot.title = element_blank(),
+    axis.title = element_text(face = "bold", size = 14),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, size = 1.2),
+    axis.ticks = element_line(color = "black")
+  )
+
+# --- Step 6 (optional): Save plot ---
+# ggsave("C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_H_boxplot.png", width = 8, height = 6, dpi = 300)
