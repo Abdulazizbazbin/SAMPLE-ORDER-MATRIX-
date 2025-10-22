@@ -1,0 +1,44 @@
+# ============================================ 
+# Publication-Quality Boxplot of Shannon Diversity (H) by WWTP
+# ============================================
+
+# --- Load Required Libraries ---
+library(tidyverse)
+
+# --- Step 1: Load the data ---
+file_path <- "C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_richness_evenness_per_sample 1.csv"
+shannonH_df <- read.csv(file_path, check.names = FALSE)
+
+# --- Step 2: Clean WWTP column ---
+shannonH_df$wwtp <- str_trim(shannonH_df$wwtp)
+
+# --- Step 3: Set WWTP order (based on your dataset) ---
+wwtp_levels <- c("San Jose, CA", "Gainesville, FL", "Toledo, OH", "Orange County, CA", "Oceanside, CA")
+shannonH_df$wwtp <- factor(shannonH_df$wwtp, levels = wwtp_levels)
+
+# --- Step 4: Define publication-quality color palette ---
+pub_colors <- c("gold", "steelblue", "firebrick", "forestgreen", "purple")
+
+# --- Step 5: Create publication-quality boxplot (Shannon_H by WWTP) ---
+ggplot(shannonH_df, aes(x = wwtp, y = Shannon_H, fill = wwtp)) +
+  geom_boxplot(outlier.shape = 21, color = "black", alpha = 0.85, width = 0.7) +
+  geom_jitter(width = 0.15, size = 2, alpha = 0.6) +
+  scale_fill_manual(values = pub_colors) +
+  labs(
+    x = "Wastewater Treatment Plant (WWTP)",
+    y = "Shannon Diversity (H)"
+  ) +
+  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  theme(
+    legend.position = "none",
+    plot.title = element_blank(),
+    axis.title = element_text(face = "bold", size = 14),
+    axis.text = element_text(size = 12, angle = 30, hjust = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, size = 1.2),
+    axis.ticks = element_line(color = "black")
+  )
+
+# --- Step 6 (optional): Save plot ---
+# ggsave("C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_H_boxplot_by_WWTP.png", width = 8, height = 6, dpi = 300)
