@@ -1,5 +1,5 @@
-# ============================================ 
-# Publication-Quality Boxplot of Shannon Diversity (H) by WWTP
+# ============================================  
+# ✅ Publication-Quality Boxplot of Shannon Diversity (H) by WWTP
 # ============================================
 
 # --- Load Required Libraries ---
@@ -16,18 +16,44 @@ shannonH_df$wwtp <- str_trim(shannonH_df$wwtp)
 wwtp_levels <- c("San Jose, CA", "Gainesville, FL", "Toledo, OH", "Orange County, CA", "Oceanside, CA")
 shannonH_df$wwtp <- factor(shannonH_df$wwtp, levels = wwtp_levels)
 
-# --- Step 4: Define publication-quality color palette ---
-pub_colors <- c("gold", "steelblue", "firebrick", "forestgreen", "purple")
+# --- Step 4: Define publication-quality color palette (consistent with order) ---
+pub_colors <- c(
+  "San Jose, CA"      = "gold",
+  "Gainesville, FL"   = "steelblue",
+  "Toledo, OH"        = "firebrick",
+  "Orange County, CA" = "forestgreen",
+  "Oceanside, CA"     = "purple"
+)
 
 # --- Step 5: Create publication-quality boxplot (Shannon_H by WWTP) ---
 ggplot(shannonH_df, aes(x = wwtp, y = Shannon_H, fill = wwtp)) +
-  geom_boxplot(outlier.shape = 21, color = "black", alpha = 0.85, width = 0.7) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.6) +
+  # Boxplot layer with black borders
+  geom_boxplot(
+    outlier.shape = 21,
+    color = "black",
+    alpha = 0.85,
+    width = 0.7
+  ) +
+
+  # ✅ Jittered data points with black outline and colored fill
+  geom_jitter(
+    aes(fill = wwtp),     # map fill color from WWTP
+    shape = 21,           # allows both fill and border color
+    color = "black",      # solid black outer boundary
+    width = 0.15,
+    size = 2.5,
+    alpha = 0.9
+  ) +
+
+  # Apply same palette for boxes and points
   scale_fill_manual(values = pub_colors) +
+
   labs(
     x = "Wastewater Treatment Plant (WWTP)",
     y = "Shannon Diversity (H)"
   ) +
+
+  # Clean publication-style theme
   theme_minimal(base_size = 14, base_family = "Helvetica") +
   theme(
     legend.position = "none",
@@ -40,5 +66,6 @@ ggplot(shannonH_df, aes(x = wwtp, y = Shannon_H, fill = wwtp)) +
     axis.ticks = element_line(color = "black")
   )
 
-# --- Step 6 (optional): Save plot ---
-# ggsave("C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_H_boxplot_by_WWTP.png", width = 8, height = 6, dpi = 300)
+# --- Step 6 (optional): Save high-resolution publication figure ---
+# ggsave("C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_H_boxplot_by_WWTP_blackoutline.png",
+#        width = 10, height = 7, dpi = 600, bg = "white")
