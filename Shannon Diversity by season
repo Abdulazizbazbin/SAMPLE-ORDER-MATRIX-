@@ -1,5 +1,5 @@
 # ============================= 
-# Publication-Quality Boxplot of Shannon Diversity (H) by Season (with border and ticks)
+# ✅ Publication-Quality Boxplot of Shannon Diversity (H) by Season
 # =============================
 
 library(tidyverse)
@@ -8,28 +8,45 @@ library(tidyverse)
 file_path <- "C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_richness_evenness_per_sample 1.csv"
 shannon_df <- read.csv(file_path, check.names = FALSE)
 
-# --- Step 2: Clean season column ---
-shannon_df$season <- str_trim(shannon_df$season)
+# --- Step 2: Clean and standardize season column ---
+shannon_df$season <- str_trim(tolower(shannon_df$season))
+shannon_df$season <- factor(shannon_df$season, levels = c("fall", "spring", "winter"))
 
-# --- Step 3: Convert season to factor (set order if desired) ---
-# Example manual order (edit to match your dataset):
-# season_levels <- c("Winter", "Spring", "Summer", "Fall")
-# shannon_df$season <- factor(shannon_df$season, levels = season_levels)
-# If you prefer automatic order:
-shannon_df$season <- factor(shannon_df$season)
+# --- Step 3: Define consistent publication colors for seasons ---
+pub_colors <- c(
+  "fall" = "blue",
+  "spring" = "limegreen",
+  "winter" = "gold"
+)
 
-# --- Step 4: Define publication-quality colors ---
-pub_colors <- c("skyblue", "springgreen3", "gold", "tomato")[1:length(unique(shannon_df$season))]
-
-# --- Step 5: Create boxplot (Shannon_H by Season) ---
+# --- Step 4: Create the boxplot ---
 ggplot(shannon_df, aes(x = season, y = Shannon_H, fill = season)) +
-  geom_boxplot(outlier.shape = 21, color = "black", alpha = 0.8, width = 0.7) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.6) +
+  # Boxplot layer
+  geom_boxplot(
+    outlier.shape = 21,
+    color = "black",
+    alpha = 0.8,
+    width = 0.7
+  ) +
+  # Jittered data points with black border
+  geom_jitter(
+    aes(fill = season),
+    shape = 21,              # allows both fill and border color
+    color = "black",         # black border for all points
+    width = 0.15,
+    size = 2.5,
+    alpha = 0.9
+  ) +
+  # Custom colors for fills
   scale_fill_manual(values = pub_colors) +
+  
+  # Axis labels
   labs(
     x = "Season",
     y = "Shannon Diversity (H)"
   ) +
+  
+  # Publication-ready theme
   theme_minimal(base_size = 14, base_family = "Helvetica") +
   theme(
     legend.position = "none",
