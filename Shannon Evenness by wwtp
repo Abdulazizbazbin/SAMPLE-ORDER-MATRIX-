@@ -1,5 +1,5 @@
 # ============================= 
-# Publication-Quality Boxplot of Shannon Evenness by WWTP (with border and ticks)
+# ✅ Publication-Quality Boxplot of Shannon Evenness by WWTP (with Black Outlined Points)
 # =============================
 
 library(tidyverse)
@@ -11,21 +11,35 @@ shannon_df <- read.csv(file_path, check.names = FALSE)
 # --- Step 2: Clean WWTP column ---
 shannon_df$wwtp <- str_trim(shannon_df$wwtp)
 
-# --- Step 3: Convert WWTP to factor (set order if desired) ---
-# You can manually order them if you want, for example:
-# wwtp_levels <- c("San Jose, CA", "Sunnyvale, CA", "Palo Alto, CA")
-# shannon_df$wwtp <- factor(shannon_df$wwtp, levels = wwtp_levels)
-# If you prefer automatic order:
+# --- Step 3: Convert WWTP to factor (you can set manual order if needed) ---
 shannon_df$wwtp <- factor(shannon_df$wwtp)
 
 # --- Step 4: Define publication-quality colors ---
-pub_colors <- c("yellow", "blue", "red", "green", "purple", "orange", "cyan")[1:length(unique(shannon_df$wwtp))]
+pub_colors <- c("gold", "steelblue", "firebrick", "forestgreen", "purple", "orange", "cyan")[1:length(unique(shannon_df$wwtp))]
 
-# --- Step 5: Create boxplot (Shannon Evenness by WWTP) ---
+# --- Step 5: Create publication-quality boxplot (Shannon Evenness by WWTP) ---
 ggplot(shannon_df, aes(x = wwtp, y = Shannon_Evenness, fill = wwtp)) +
-  geom_boxplot(outlier.shape = 21, color = "black", alpha = 0.8, width = 0.7) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.6) +
+  # Boxplot with black borders
+  geom_boxplot(
+    outlier.shape = 21,
+    color = "black",
+    alpha = 0.85,
+    width = 0.7
+  ) +
+
+  # ✅ Jitter points with black outer boundary
+  geom_jitter(
+    aes(fill = wwtp),
+    shape = 21,            # allows both fill and border
+    color = "black",       # solid black outer boundary
+    width = 0.15,
+    size = 2.5,
+    alpha = 0.9
+  ) +
+
+  # --- Apply consistent colors ---
   scale_fill_manual(values = pub_colors) +
+
   labs(
     x = "Wastewater Treatment Plant (WWTP)",
     y = "Shannon Evenness (H / ln(S))"
@@ -42,3 +56,7 @@ ggplot(shannon_df, aes(x = wwtp, y = Shannon_Evenness, fill = wwtp)) +
     panel.border = element_rect(color = "black", fill = NA, size = 1.2),
     axis.ticks = element_line(color = "black")
   )
+
+# --- Step 6 (optional): Save plot ---
+# ggsave("C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_evenness_boxplot_by_WWTP_blackoutline.png", 
+#        width = 8, height = 6, dpi = 600, bg = "white")
