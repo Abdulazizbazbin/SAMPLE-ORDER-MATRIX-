@@ -1,5 +1,5 @@
 # ============================================
-# Publication-Quality Boxplot of Shannon Diversity (H) by Pore Size
+# ✅ Publication-Quality Boxplot of Shannon Diversity (H) by Pore Size
 # ============================================
 
 # --- Load Required Libraries ---
@@ -17,13 +17,37 @@ pore_levels <- c("0.45 filtrate", "0.45", "3", "20", "100")
 shannonH_df$pore_size <- factor(shannonH_df$pore_size, levels = pore_levels)
 
 # --- Step 4: Define publication-quality color palette ---
-pub_colors <- c("yellow", "blue", "red", "green", "purple")
+pub_colors <- c(
+  "0.45 filtrate" = "yellow",
+  "0.45"          = "blue",
+  "3"             = "red",
+  "20"            = "green",
+  "100"           = "purple"
+)
 
 # --- Step 5: Create publication-quality boxplot (Shannon_H by pore size) ---
 ggplot(shannonH_df, aes(x = pore_size, y = Shannon_H, fill = pore_size)) +
-  geom_boxplot(outlier.shape = 21, color = "black", alpha = 0.85, width = 0.7) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.6) +
+  # Boxplot with black outline
+  geom_boxplot(
+    outlier.shape = 21,
+    color = "black",
+    alpha = 0.85,
+    width = 0.7
+  ) +
+  
+  # ✅ Jitter points with black border and color fill
+  geom_jitter(
+    aes(fill = pore_size),
+    shape = 21,               # allows both fill and border
+    color = "black",          # solid black outer boundary
+    width = 0.15,
+    size = 2.5,
+    alpha = 0.9
+  ) +
+
+  # Apply consistent colors
   scale_fill_manual(values = pub_colors) +
+
   labs(
     x = "Pore Size (μm)",
     y = "Shannon Diversity (H)"
@@ -40,5 +64,6 @@ ggplot(shannonH_df, aes(x = pore_size, y = Shannon_H, fill = pore_size)) +
     axis.ticks = element_line(color = "black")
   )
 
-# --- Step 6 (optional): Save plot ---
-# ggsave("C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_H_boxplot.png", width = 8, height = 6, dpi = 300)
+# --- Step 6 (optional): Save high-resolution figure ---
+# ggsave("C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_H_boxplot_by_poresize_blackoutline.png", 
+#        width = 8, height = 6, dpi = 600, bg = "white")
