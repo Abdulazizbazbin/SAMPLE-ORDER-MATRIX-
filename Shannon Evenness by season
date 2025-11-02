@@ -1,5 +1,5 @@
 # ============================= 
-# Publication-Quality Boxplot of Shannon Evenness by Season (with border and ticks)
+# ✅ Publication-Quality Boxplot of Shannon Evenness by Season (with Black Outlined Points)
 # =============================
 
 library(tidyverse)
@@ -11,21 +11,40 @@ shannon_df <- read.csv(file_path, check.names = FALSE)
 # --- Step 2: Clean season column ---
 shannon_df$season <- str_trim(shannon_df$season)
 
-# --- Step 3: Convert season to factor (set order if desired) ---
-# Example manual order (edit to match your dataset):
-# season_levels <- c("Winter", "Spring", "Summer", "Fall")
-# shannon_df$season <- factor(shannon_df$season, levels = season_levels)
-# If you prefer automatic order:
-shannon_df$season <- factor(shannon_df$season)
+# --- Step 3: Convert season to factor (keep lowercase: fall, winter, spring) ---
+season_levels <- c("fall", "winter", "spring")
+shannon_df$season <- factor(shannon_df$season, levels = season_levels)
 
-# --- Step 4: Define publication-quality colors ---
-pub_colors <- c("skyblue", "springgreen3", "gold", "tomato")[1:length(unique(shannon_df$season))]
+# --- Step 4: Define publication-quality colors (matched to seasons) ---
+pub_colors <- c(
+  "fall"   = "gold",
+  "winter" = "skyblue",
+  "spring" = "springgreen3"
+)
 
 # --- Step 5: Create boxplot (Shannon Evenness by Season) ---
 ggplot(shannon_df, aes(x = season, y = Shannon_Evenness, fill = season)) +
-  geom_boxplot(outlier.shape = 21, color = "black", alpha = 0.8, width = 0.7) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.6) +
+  # Boxplot layer
+  geom_boxplot(
+    outlier.shape = 21,
+    color = "black",
+    alpha = 0.85,
+    width = 0.7
+  ) +
+
+  # ✅ Jitter points with black outer boundary
+  geom_jitter(
+    aes(fill = season),
+    shape = 21,             # allows both fill and border
+    color = "black",        # solid black outline
+    width = 0.15,
+    size = 2.5,
+    alpha = 0.9
+  ) +
+
+  # --- Match colors for both box and point fill ---
   scale_fill_manual(values = pub_colors) +
+
   labs(
     x = "Season",
     y = "Shannon Evenness (H / ln(S))"
@@ -42,3 +61,7 @@ ggplot(shannon_df, aes(x = season, y = Shannon_Evenness, fill = season)) +
     panel.border = element_rect(color = "black", fill = NA, size = 1.2),
     axis.ticks = element_line(color = "black")
   )
+
+# --- Step 6 (optional): Save plot ---
+# ggsave("C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_evenness_boxplot_by_season_blackoutline.png", 
+#        width = 8, height = 6, dpi = 600, bg = "white")
