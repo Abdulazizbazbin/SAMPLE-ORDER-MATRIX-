@@ -1,0 +1,219 @@
+# =============================
+#  Publication-Quality Virus–Season Interaction Network (Order Level)
+#  (With Abundance Legend Added)
+# =============================
+
+# --- Load Libraries ---
+library(tidyverse)
+library(igraph)
+library(ggraph)
+library(RColorBrewer)
+library(ggrepel)
+library(ggpubr)
+library(showtext)
+
+# --- Enable Beautiful Font (for publication aesthetics) ---
+font_add_google("Lato", "lato")
+showtext_auto()
+
+# --- Step 1: Load and Prepare Data ---
+file_path <- "C:/Users/Abdulaziz Khalil/Desktop/Dataset/combined_68_sample_order_matrix.csv"
+df <- read.csv(file_path, check.names = FALSE)
+
+# ✅ Ensure column names are consistent
+if (!"sample.name" %in% names(df) && "sample_name" %in% names(df)) {
+  df <- df %>% rename(sample.name = sample_name)
+}
+if (!"season" %in% names(df)) stop("Input CSV must contain a 'season' column (fall, winter, spring).")
+
+# --- Clean and standardize season values ---
+df <- df %>%
+  mutate(
+    Season = trimws(tolower(as.character(season))),  # remove spaces and ensure lowercase
+    Season = case_when(
+      Season %in% c("fall", "autumn") ~ "fall",
+      Season %in% c("winter") ~ "winter",
+      Season %in% c("spring") ~ "spring",
+      TRUE ~ Season
+    ),
+    sample.name = paste0("vOTU ", sample.name)
+  )
+
+# --- Step 2: Reshape to Long Format ---
+meta_cols <- c("sample.name", "season", "Season")
+df_long <- df %>%
+  pivot_longer(
+    cols = -any_of(meta_cols),
+    names_to = "ViralOrder",
+    values_to = "Abundance"
+  ) %>%
+  filter(!is.na(Abundance) & Abundance > 0)
+
+# --- Step 3: Aggregate Data ---
+df_agg <- df_long %>%
+  group_by(Season, ViralOrder) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop")
+
+# --- Step 4: Build Graph ---
+edges <- df_agg %>%
+  rename(from = Season, to = ViralOrder) %>%
+  select(from, to, Abundance)
+
+nodes_season <- unique(df_agg$Season)
+nodes_virus <- unique(df_agg$ViralOrder)
+
+nodes <- tibble(
+  name = c(as.character(nodes_season), as.character(nodes_virus)),
+  type = c(rep("Season", length(nodes_season)), rep("Virus", length(nodes_virus)))
+)
+
+g <- graph_from_data_frame(edges, vertices = nodes, directed = FALSE)
+V(g)$plot_size <- ifelse(V(g)$type == "Season", 4.5, 6)
+
+# --- Step 5: Define Color Palettes ---
+# Muted, professional palette for seasons
+season_palette <- c(
+  "fall" = "#E69F00",     # amber
+  "winter" = "#56B4E9",   # light blue
+  "spring" = "#009E73"    # green
+)
+
+# Handle missing seasons (if any)
+missing_seasons <- setdiff(nodes_season, names(season_palette))
+if (length(missing_seasons) > 0) {
+  extra_cols <- colorRampPalette(brewer.pal(8, "Dark2"))(length(missing_seasons))
+  names(extra_cols) <- missing_seasons
+  season_palette <- c(season_palette, extra_cols)
+}
+
+# Viral orders palette (soft distinct colors)
+virus_colors <- colorRampPalette(brewer.pal(12, "Set3"))(length(nodes_virus))
+names(virus_colors) <- nodes_virus
+
+# --- Step 6: Create Layout ---
+set.seed(123)
+layout <- create_layout(g, layout = "fr")
+
+# --- Step 7: Main Network Plot ---
+p <- ggraph(layout) +
+  # Edges
+  geom_edge_link(
+    colour = "gray65",
+    width = 0.6,
+    alpha = 0.7,
+    show.legend = FALSE
+  ) +
+  # Season nodes (circles)
+  geom_node_point(
+    data = filter(layout, type == "Season"),
+    aes(x = x, y = y, fill = name),
+    shape = 21,
+    size = 6.5,
+    color = "black",
+    stroke = 0.6
+  ) +
+  # Viral nodes (triangles)
+  geom_node_point(
+    data = filter(layout, type == "Virus"),
+    aes(x = x, y = y, fill = name),
+    shape = 24,
+    size = 7.5,
+    color = "black",
+    stroke = 0.5
+  ) +
+  scale_fill_manual(
+    values = c(season_palette, virus_colors),
+    name = "Node Type"
+  ) +
+  # Node labels
+  geom_text_repel(
+    data = layout,
+    aes(x = x, y = y, label = name),
+    size = 4.3,
+    family = "lato",
+    fontface = "bold",
+    box.padding = 0.4,
+    point.padding = 0.3,
+    segment.color = "gray70",
+    max.overlaps = 30
+  ) +
+  theme_void() +
+  ggtitle("Virus–Season Interaction Network (Order Level)") +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold",
+      size = 18,
+      family = "lato"
+    ),
+    legend.position = "none"
+  )
+
+# --- Step 8: Unified Legends (Season, Viral Orders, Abundance) ---
+legend_season <- ggpubr::get_legend(
+  ggplot(data.frame(Season = names(season_palette))) +
+    geom_point(aes(x = Season, y = 1, fill = Season),
+               shape = 21, size = 6, color = "black") +
+    scale_fill_manual(name = "Season", values = season_palette) +
+    theme_void() +
+    theme(
+      legend.position = "bottom",
+      legend.title = element_text(size = 12, face = "bold", family = "lato"),
+      legend.text = element_text(size = 11, family = "lato")
+    )
+)
+
+legend_virus <- ggpubr::get_legend(
+  ggplot(data.frame(ViralOrder = names(virus_colors))) +
+    geom_point(aes(x = ViralOrder, y = 1, fill = ViralOrder),
+               shape = 24, size = 6, color = "black") +
+    scale_fill_manual(name = "Viral Orders", values = virus_colors) +
+    theme_void() +
+    theme(
+      legend.position = "bottom",
+      legend.title = element_text(size = 12, face = "bold", family = "lato"),
+      legend.text = element_text(size = 11, family = "lato")
+    )
+)
+
+# ✅ Abundance Legend (added below other legends)
+legend_abundance <- ggpubr::get_legend(
+  ggplot(df_agg, aes(x = Abundance, y = 1, color = Abundance)) +
+    geom_point(size = 3) +
+    scale_color_gradient(low = "#FDE725", high = "#440154", name = "Abundance") +
+    theme_void() +
+    theme(
+      legend.position = "bottom",
+      legend.title = element_text(size = 12, face = "bold", family = "lato"),
+      legend.text = element_text(size = 11, family = "lato")
+    )
+)
+
+# --- Step 9: Combine Legends and Plot ---
+combined_legends <- ggarrange(
+  legend_season,
+  legend_virus,
+  legend_abundance,
+  ncol = 1,
+  align = "v",
+  heights = c(1, 1, 0.8)
+)
+
+final_plot <- ggarrange(
+  p,
+  combined_legends,
+  ncol = 1,
+  heights = c(10, 3)
+)
+
+# --- Step 10: Save Publication-Quality Figure ---
+print(final_plot)
+
+ggsave(
+  "Virus_Season_OrderLevel_Network_with_AbundanceLegend.png",
+  final_plot,
+  width = 14,
+  height = 10,
+  dpi = 600,
+  bg = "white"
+)
