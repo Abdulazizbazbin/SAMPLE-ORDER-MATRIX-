@@ -1,22 +1,15 @@
-# ============================================
-# ✅ Publication-Quality Boxplot of Shannon Diversity (H) by Pore Size
-# ============================================
-
-# --- Load Required Libraries ---
 library(tidyverse)
+library(ggpubr)
+library(rstatix)
 
-# --- Step 1: Load the data ---
+# --- Load data ---
 file_path <- "C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_richness_evenness_per_sample 1.csv"
 shannonH_df <- read.csv(file_path, check.names = FALSE)
 
-# --- Step 2: Clean pore_size column ---
-shannonH_df$pore_size <- str_trim(shannonH_df$pore_size)
-
-# --- Step 3: Set pore size order (smallest to largest) ---
+shannonH_df$pore_size <- stringr::str_trim(shannonH_df$pore_size)
 pore_levels <- c("0.45 filtrate", "0.45", "3", "20", "100")
 shannonH_df$pore_size <- factor(shannonH_df$pore_size, levels = pore_levels)
 
-# --- Step 4: Define publication-quality color palette ---
 pub_colors <- c(
   "0.45 filtrate" = "yellow",
   "0.45"          = "blue",
@@ -25,45 +18,76 @@ pub_colors <- c(
   "100"           = "purple"
 )
 
-# --- Step 5: Create publication-quality boxplot (Shannon_H by pore size) ---
-ggplot(shannonH_df, aes(x = pore_size, y = Shannon_H, fill = pore_size)) +
-  # Boxplot with black outline
+# Global Kruskal–Wallis test
+kw_res <- kruskal.test(Shannon_H ~ pore_size, data = shannonH_df)
+kw_res
+
+# Pairwise Wilcoxon tests
+pairwise_res <- shannonH_df %>%
+  pairwise_wilcox_test(Shannon_H ~ pore_size, p.adjust.method = "BH")
+pairwise_res
+
+# Comparisons to display
+my_comparisons <- list(
+  c("0.45 filtrate", "0.45"),
+  c("0.45 filtrate", "3"),
+  c("0.45 filtrate", "20"),
+  c("0.45 filtrate", "100")
+)
+
+y_max <- max(shannonH_df$Shannon_H, na.rm = TRUE)
+
+p <- ggplot(shannonH_df, aes(x = pore_size, y = Shannon_H, fill = pore_size)) +
   geom_boxplot(
-    outlier.shape = 21,
+    outlier.shape = NA,
     color = "black",
     alpha = 0.85,
     width = 0.7
   ) +
-  
-  # ✅ Jitter points with black border and color fill
   geom_jitter(
-    aes(fill = pore_size),
-    shape = 21,               # allows both fill and border
-    color = "black",          # solid black outer boundary
+    shape = 21,
+    color = "black",
     width = 0.15,
     size = 2.5,
     alpha = 0.9
   ) +
-
-  # Apply consistent colors
   scale_fill_manual(values = pub_colors) +
-
   labs(
     x = "Pore Size (μm)",
     y = "Shannon Diversity (H)"
   ) +
-  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  
+  # Pairwise significance
+  stat_compare_means(
+    comparisons   = my_comparisons,
+    method        = "wilcox.test",
+    label         = "p.signif",
+    hide.ns       = FALSE,
+    step.increase = 0.07
+  ) +
+  
+  # Global test label (right side)
+  stat_compare_means(
+    method  = "kruskal.test",
+    label.y = y_max * 1.05,
+    label.x = 5,
+    size    = 4
+  ) +
+  
+  theme_minimal(base_size = 14) +
   theme(
     legend.position = "none",
-    plot.title = element_blank(),
-    axis.title = element_text(face = "bold", size = 14),
-    axis.text = element_text(size = 12),
+    axis.title      = element_text(face = "bold", size = 14),
+    
+    # 🔥 Increased axis text size
+    axis.text       = element_text(face = "bold", size = 16),
+    
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.border = element_rect(color = "black", fill = NA, size = 1.2),
-    axis.ticks = element_line(color = "black")
-  )
+    panel.border    = element_rect(color = "black", fill = NA, size = 1.2),
+    axis.ticks      = element_line(color = "black")
+  ) +
+  
+  coord_cartesian(ylim = c(0, y_max * 1.20))
 
-# --- Step 6 (optional): Save high-resolution figure ---
-# ggsave("C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_H_boxplot_by_poresize_blackoutline.png", 
-#        width = 8, height = 6, dpi = 600, bg = "white")
+p
