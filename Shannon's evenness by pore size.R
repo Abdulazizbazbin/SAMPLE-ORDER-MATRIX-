@@ -1,22 +1,21 @@
 # =============================  
 # Publication-Quality Boxplot of Shannon Evenness by Pore Size
-# (with significance & bold axis text)
+# (with enlarged significance labels)
 # =============================
 
 library(tidyverse)
 library(ggpubr)
 library(rstatix)
 
-# --- Step 1: Load the data ---
+# --- Load data ---
 file_path <- "C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_richness_evenness_per_sample 1.csv"
 shannon_df <- read.csv(file_path, check.names = FALSE)
 
-# --- Step 2: Clean pore_size ---
 shannon_df$pore_size <- stringr::str_trim(shannon_df$pore_size)
 pore_levels <- c("0.45 filtrate", "0.45", "3", "20", "100")
 shannon_df$pore_size <- factor(shannon_df$pore_size, levels = pore_levels)
 
-# --- Step 3: Color palette ---
+# Colors
 pub_colors <- c(
   "0.45 filtrate" = "gold",
   "0.45"          = "steelblue",
@@ -25,26 +24,20 @@ pub_colors <- c(
   "100"           = "purple"
 )
 
-# --- Step 4: Global Kruskal–Wallis test ---
-kw_res_even <- kruskal.test(Shannon_Evenness ~ pore_size, data = shannon_df)
-kw_res_even
+# Kruskal–Wallis
+kruskal.test(Shannon_Evenness ~ pore_size, data = shannon_df)
 
-# --- Step 5: (optional) pairwise tests for your info ---
-pairwise_even <- shannon_df %>%
-  pairwise_wilcox_test(Shannon_Evenness ~ pore_size, p.adjust.method = "BH")
-pairwise_even
-
-# --- Step 6: Define the 4 comparisons you want to show ---
+# Comparisons (all vs 0.45 filtrate)
 my_comparisons_even <- list(
   c("0.45 filtrate", "0.45"),
   c("0.45 filtrate", "3"),
   c("0.45 filtrate", "20"),
-  c("0.45 filtrate", "100")   # ✅ this is the one that was missing
+  c("0.45 filtrate", "100")
 )
 
 y_max_even <- max(shannon_df$Shannon_Evenness, na.rm = TRUE)
 
-# --- Step 7: Plot with significance ---
+# --- Plot ---
 p_even <- ggplot(shannon_df, aes(x = pore_size, y = Shannon_Evenness, fill = pore_size)) +
   
   geom_boxplot(
@@ -69,16 +62,17 @@ p_even <- ggplot(shannon_df, aes(x = pore_size, y = Shannon_Evenness, fill = por
     y = "Shannon Evenness (H / ln(S))"
   ) +
   
-  # Pairwise lines (all vs 0.45 filtrate, including 100 µm)
+  # Pairwise significance with **larger stars/ns**
   stat_compare_means(
     comparisons   = my_comparisons_even,
     method        = "wilcox.test",
     label         = "p.signif",
-    hide.ns       = FALSE,      # show ns as well
+    hide.ns       = FALSE,
+    size          = 6,          # <<< Increase significance text size here
     step.increase = 0.07
   ) +
   
-  # Global Kruskal–Wallis label on the right
+  # Global test label on right
   stat_compare_means(
     method  = "kruskal.test",
     label.y = y_max_even * 1.05,
