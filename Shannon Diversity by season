@@ -1,10 +1,13 @@
 # ============================= 
-# ✅ Publication-Quality Boxplot of Shannon Diversity (H) by Season
+# Publication-Quality Boxplot of Shannon Diversity (H) by Season
+# with global + pairwise significance
 # =============================
 
 library(tidyverse)
+library(ggpubr)
+library(rstatix)
 
-# --- Step 1: Load Shannon-Richness-Evenness data ---
+# --- Step 1: Load the data ---
 file_path <- "C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_richness_evenness_per_sample 1.csv"
 shannon_df <- read.csv(file_path, check.names = FALSE)
 
@@ -12,50 +15,88 @@ shannon_df <- read.csv(file_path, check.names = FALSE)
 shannon_df$season <- str_trim(tolower(shannon_df$season))
 shannon_df$season <- factor(shannon_df$season, levels = c("fall", "spring", "winter"))
 
-# --- Step 3: Define consistent publication colors for seasons ---
+# --- Step 3: Define publication colors ---
 pub_colors <- c(
-  "fall" = "blue",
+  "fall"   = "blue",
   "spring" = "limegreen",
   "winter" = "gold"
 )
 
-# --- Step 4: Create the boxplot ---
-ggplot(shannon_df, aes(x = season, y = Shannon_H, fill = season)) +
-  # Boxplot layer
+# --- Step 4: Global Kruskal–Wallis test ---
+kw_season <- kruskal.test(Shannon_H ~ season, data = shannon_df)
+kw_season
+
+# --- Step 5: Pairwise Wilcoxon tests (for info) ---
+pairwise_season <- shannon_df %>%
+  pairwise_wilcox_test(Shannon_H ~ season, p.adjust.method = "BH")
+pairwise_season
+
+# --- Step 6: Pairwise comparisons to plot ---
+my_comparisons_season <- list(
+  c("fall", "spring"),
+  c("fall", "winter"),
+  c("spring", "winter")
+)
+
+y_max_season <- max(shannon_df$Shannon_H, na.rm = TRUE)
+
+# --- Step 7: Plot ---
+p_season <- ggplot(shannon_df, aes(x = season, y = Shannon_H, fill = season)) +
+  
+  # Boxplot
   geom_boxplot(
-    outlier.shape = 21,
+    outlier.shape = NA,
     color = "black",
-    alpha = 0.8,
+    alpha = 0.85,
     width = 0.7
   ) +
-  # Jittered data points with black border
+  
+  # Jittered points
   geom_jitter(
-    aes(fill = season),
-    shape = 21,              # allows both fill and border color
-    color = "black",         # black border for all points
+    shape = 21,
+    color = "black",
     width = 0.15,
     size = 2.5,
     alpha = 0.9
   ) +
-  # Custom colors for fills
+  
   scale_fill_manual(values = pub_colors) +
   
-  # Axis labels
   labs(
     x = "Season",
     y = "Shannon Diversity (H)"
   ) +
   
-  # Publication-ready theme
-  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  # Pairwise significance (bigger stars/ns)
+  stat_compare_means(
+    comparisons   = my_comparisons_season,
+    method        = "wilcox.test",
+    label         = "p.signif",
+    hide.ns       = FALSE,
+    size          = 8,      # ⭐ Bigger significance text
+    step.increase = 0.07
+  ) +
+  
+  # Global test (Kruskal–Wallis) on right
+  stat_compare_means(
+    method  = "kruskal.test",
+    label.y = y_max_season * 1.05,
+    label.x = 3,       # "winter" (third position)
+    size    = 4
+  ) +
+  
+  theme_minimal(base_size = 14) +
   theme(
     legend.position = "none",
-    plot.title = element_blank(),
-    axis.title = element_text(face = "bold", size = 14),
-    axis.text.x = element_text(size = 11, angle = 30, hjust = 1),
-    axis.text.y = element_text(size = 12),
+    axis.title      = element_text(face = "bold", size = 14),
+    axis.text       = element_text(face = "bold", size = 16,
+                                   angle = 30, hjust = 1),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.border = element_rect(color = "black", fill = NA, size = 1.2),
-    axis.ticks = element_line(color = "black")
-  )
+    panel.border    = element_rect(color = "black", fill = NA, size = 1.2),
+    axis.ticks      = element_line(color = "black")
+  ) +
+  
+  coord_cartesian(ylim = c(0, y_max_season * 1.20))
+
+p_season
