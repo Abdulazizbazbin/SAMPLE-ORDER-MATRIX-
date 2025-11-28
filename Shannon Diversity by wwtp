@@ -1,22 +1,25 @@
 # ============================================  
 # ✅ Publication-Quality Boxplot of Shannon Diversity (H) by WWTP
+#    with global + pairwise significance
 # ============================================
 
-# --- Load Required Libraries ---
 library(tidyverse)
+library(ggpubr)
+library(rstatix)
 
 # --- Step 1: Load the data ---
 file_path <- "C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_richness_evenness_per_sample 1.csv"
 shannonH_df <- read.csv(file_path, check.names = FALSE)
 
 # --- Step 2: Clean WWTP column ---
-shannonH_df$wwtp <- str_trim(shannonH_df$wwtp)
+shannonH_df$wwtp <- stringr::str_trim(shannonH_df$wwtp)
 
-# --- Step 3: Set WWTP order (based on your dataset) ---
-wwtp_levels <- c("San Jose, CA", "Gainesville, FL", "Toledo, OH", "Orange County, CA", "Oceanside, CA")
+# --- Step 3: Set WWTP order ---
+wwtp_levels <- c("San Jose, CA", "Gainesville, FL", "Toledo, OH",
+                 "Orange County, CA", "Oceanside, CA")
 shannonH_df$wwtp <- factor(shannonH_df$wwtp, levels = wwtp_levels)
 
-# --- Step 4: Define publication-quality color palette (consistent with order) ---
+# --- Step 4: Define publication-quality color palette ---
 pub_colors <- c(
   "San Jose, CA"      = "gold",
   "Gainesville, FL"   = "steelblue",
@@ -25,47 +28,75 @@ pub_colors <- c(
   "Oceanside, CA"     = "purple"
 )
 
-# --- Step 5: Create publication-quality boxplot (Shannon_H by WWTP) ---
-ggplot(shannonH_df, aes(x = wwtp, y = Shannon_H, fill = wwtp)) +
-  # Boxplot layer with black borders
+# --- Step 5: Global Kruskal–Wallis test ---
+kw_wwtp <- kruskal.test(Shannon_H ~ wwtp, data = shannonH_df)
+kw_wwtp
+
+# --- Step 6: Pairwise Wilcoxon tests (for your info) ---
+pairwise_wwtp <- shannonH_df %>%
+  pairwise_wilcox_test(Shannon_H ~ wwtp, p.adjust.method = "BH")
+pairwise_wwtp
+
+# --- Step 7: Comparisons to show (San Jose vs all others, like pore-size plots) ---
+my_comparisons_wwtp <- list(
+  c("San Jose, CA", "Gainesville, FL"),
+  c("San Jose, CA", "Toledo, OH"),
+  c("San Jose, CA", "Orange County, CA"),
+  c("San Jose, CA", "Oceanside, CA")
+)
+
+y_max_wwtp <- max(shannonH_df$Shannon_H, na.rm = TRUE)
+
+# --- Step 8: Plot ---
+p_wwtp <- ggplot(shannonH_df, aes(x = wwtp, y = Shannon_H, fill = wwtp)) +
+  # Boxplot with black borders
   geom_boxplot(
-    outlier.shape = 21,
+    outlier.shape = NA,
     color = "black",
     alpha = 0.85,
     width = 0.7
   ) +
-
-  # ✅ Jittered data points with black outline and colored fill
+  # Jittered data points with black outline
   geom_jitter(
-    aes(fill = wwtp),     # map fill color from WWTP
-    shape = 21,           # allows both fill and border color
-    color = "black",      # solid black outer boundary
+    shape = 21,
+    color = "black",
     width = 0.15,
     size = 2.5,
     alpha = 0.9
   ) +
-
-  # Apply same palette for boxes and points
   scale_fill_manual(values = pub_colors) +
-
   labs(
     x = "Wastewater Treatment Plant (WWTP)",
     y = "Shannon Diversity (H)"
   ) +
-
-  # Clean publication-style theme
-  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  # Pairwise significance (San Jose vs others)
+  stat_compare_means(
+    comparisons   = my_comparisons_wwtp,
+    method        = "wilcox.test",
+    label         = "p.signif",
+    hide.ns       = FALSE,  # show ns too
+    size          = 8,      # ⭐ bigger stars/ns
+    step.increase = 0.07
+  ) +
+  # Global Kruskal–Wallis label on the right
+  stat_compare_means(
+    method  = "kruskal.test",
+    label.y = y_max_wwtp * 1.05,
+    label.x = 5,
+    size    = 4
+  ) +
+  theme_minimal(base_size = 14) +
   theme(
     legend.position = "none",
-    plot.title = element_blank(),
-    axis.title = element_text(face = "bold", size = 14),
-    axis.text = element_text(size = 12, angle = 30, hjust = 1),
+    plot.title      = element_blank(),
+    axis.title      = element_text(face = "bold", size = 14),
+    axis.text       = element_text(face = "bold", size = 16,
+                                   angle = 30, hjust = 1),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.border = element_rect(color = "black", fill = NA, size = 1.2),
-    axis.ticks = element_line(color = "black")
-  )
+    panel.border    = element_rect(color = "black", fill = NA, size = 1.2),
+    axis.ticks      = element_line(color = "black")
+  ) +
+  coord_cartesian(ylim = c(0, y_max_wwtp * 1.20))
 
-# --- Step 6 (optional): Save high-resolution publication figure ---
-# ggsave("C:/Users/Abdulaziz Khalil/Desktop/Dataset/shannon_H_boxplot_by_WWTP_blackoutline.png",
-#        width = 10, height = 7, dpi = 600, bg = "white")
+p_wwtp
