@@ -57,12 +57,13 @@ p <- ggplot(shannonH_df, aes(x = pore_size, y = Shannon_H, fill = pore_size)) +
     y = "Shannon Diversity (H)"
   ) +
   
-  # Pairwise significance
+  # Pairwise significance (🔥 size increased to 8)
   stat_compare_means(
     comparisons   = my_comparisons,
     method        = "wilcox.test",
     label         = "p.signif",
     hide.ns       = FALSE,
+    size          = 8,       # <<< increased star/ns size
     step.increase = 0.07
   ) +
   
@@ -78,10 +79,7 @@ p <- ggplot(shannonH_df, aes(x = pore_size, y = Shannon_H, fill = pore_size)) +
   theme(
     legend.position = "none",
     axis.title      = element_text(face = "bold", size = 14),
-    
-    # 🔥 Increased axis text size
     axis.text       = element_text(face = "bold", size = 16),
-    
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     panel.border    = element_rect(color = "black", fill = NA, size = 1.2),
